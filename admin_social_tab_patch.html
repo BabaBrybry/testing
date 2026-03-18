@@ -1,0 +1,387 @@
+<!--
+  ============================================================
+  SlopSort Admin — "Social Media Creation" Tab Patch
+  ============================================================
+
+  HOW TO INTEGRATE INTO public/index.html:
+  -----------------------------------------
+
+  STEP 1 — Add the tab button alongside other tab buttons
+  (search for the existing tab buttons, e.g. "Rankings" / "Blog" tabs, and add):
+
+    <button
+      onClick={() => setActiveTab('social')}
+      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'social' ? 'bg-lime-400 text-slate-900' : 'text-slate-300 hover:text-white'}`}
+    >
+      📱 Social Media
+    </button>
+
+  STEP 2 — Add the tab panel inside your tab content switch/conditional.
+  Find the block that renders each tab (e.g. {activeTab === 'blog' && <BlogTab ... />})
+  and add the SocialMediaTab component call:
+
+    {activeTab === 'social' && <SocialMediaTab projectId={selectedProjectId} />}
+
+  STEP 3 — Add the <SocialMediaTab> React component shown below to your
+  admin React code (inside the <script type="text/babel"> block).
+
+  STEP 4 — Move the Pinterest pin button:
+  Find the existing Pinterest pin button in your project detail view
+  and remove it from there — it now lives inside SocialMediaTab.
+
+  ============================================================
+  REACT COMPONENT (paste inside <script type="text/babel">)
+  ============================================================
+-->
+
+<!-- ==================== REACT COMPONENT ==================== -->
+<script type="text/babel" id="social-media-tab-component">
+
+// =============================================================
+// SocialMediaTab — Main component for the Social Media Creation tab
+// =============================================================
+function SocialMediaTab({ projectId }) {
+  const [preview, setPreview]           = React.useState(null);
+  const [loadingPreview, setLoading]    = React.useState(false);
+  const [generating, setGenerating]     = React.useState(false);
+  const [error, setError]               = React.useState('');
+  const [pinGenerating, setPinGen]      = React.useState(false);
+  const [voiceId, setVoiceId]           = React.useState('21m00Tcm4TlvDq8ikWAM');
+  const [successMsg, setSuccessMsg]     = React.useState('');
+
+  // Load preview data when project changes
+  React.useEffect(() => {
+    if (!projectId) { setPreview(null); return; }
+    loadPreview();
+  }, [projectId]);
+
+  async function loadPreview() {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/video-preview`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load preview');
+      setPreview(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGenerateVideo() {
+    setGenerating(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/generate-video`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elevenlabs_voice_id: voiceId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      // Trigger browser download
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      const cd   = res.headers.get('Content-Disposition') || '';
+      const match = cd.match(/filename="([^"]+)"/);
+      a.href     = url;
+      a.download = match ? match[1] : `slopsort_video_${projectId}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setSuccessMsg('Video downloaded! Ready to post on TikTok, Instagram Reels, or YouTube Shorts.');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handlePinterestPin() {
+    setPinGen(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/projects/${projectId}/pinterest-pin`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `pinterest_pin_${projectId}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setSuccessMsg('Pinterest pin downloaded!');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setPinGen(false);
+    }
+  }
+
+  // ---- No project selected ----
+  if (!projectId) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400 text-lg">
+        Select a project from the Rankings tab to create social content.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-w-3xl mx-auto">
+
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">📱</span>
+        <div>
+          <h2 className="text-xl font-bold text-white">Social Media Creation</h2>
+          <p className="text-slate-400 text-sm">Generate short videos & graphics for TikTok, Instagram Reels, YouTube Shorts, and Pinterest.</p>
+        </div>
+      </div>
+
+      {/* Error / Success */}
+      {error && (
+        <div className="bg-red-900/40 border border-red-500 rounded-lg px-4 py-3 text-red-300 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+      {successMsg && (
+        <div className="bg-lime-900/40 border border-lime-500 rounded-lg px-4 py-3 text-lime-300 text-sm">
+          ✅ {successMsg}
+        </div>
+      )}
+
+      {/* ---- SHORT VIDEO CARD ---- */}
+      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-5 py-4 border-b border-slate-700 flex items-center gap-3">
+          <span className="text-2xl">🎬</span>
+          <div>
+            <h3 className="font-semibold text-white">Short Video</h3>
+            <p className="text-slate-400 text-xs">MP4 · 1080×1920 (9:16) · 15–30 sec · TikTok / Reels / Shorts</p>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Preview panel */}
+          {loadingPreview && (
+            <div className="text-slate-400 text-sm animate-pulse">Loading ranking data…</div>
+          )}
+
+          {preview && !loadingPreview && (
+            <div className="bg-slate-900 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-white font-medium text-sm">{preview.project_title}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${preview.project_status === 'published' ? 'bg-lime-400/20 text-lime-400' : 'bg-amber-400/20 text-amber-400'}`}>
+                  {preview.project_status}
+                </span>
+              </div>
+
+              <div className="text-xs text-slate-400">
+                ⏱ ~{Math.round(preview.estimated_duration_sec)}s · {preview.format} · {preview.ai_count} AI models
+              </div>
+
+              {/* Products countdown preview */}
+              <div className="space-y-1">
+                <div className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-2">Video countdown: #5 → #1</div>
+                {[...preview.products].reverse().map((p, i) => (
+                  <div key={i} className="flex items-center gap-3 text-sm">
+                    <span className="text-lime-400 font-bold w-6">#{p.rank}</span>
+                    <span className="text-white flex-1 truncate">{p.name}</span>
+                    <span className="text-slate-400 text-xs">{p.agreement_pct}% agree</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Voiceover status */}
+              <div className={`text-xs flex items-center gap-2 ${preview.has_elevenlabs ? 'text-lime-400' : 'text-amber-400'}`}>
+                {preview.has_elevenlabs ? '🎙️ ElevenLabs voiceover enabled' : '⚠️ No ELEVENLABS_API_KEY — video will be silent (add key to Replit Secrets)'}
+              </div>
+            </div>
+          )}
+
+          {/* Voice selector (shown only if ElevenLabs key present) */}
+          {preview?.has_elevenlabs && (
+            <div className="space-y-1">
+              <label className="text-slate-400 text-xs uppercase tracking-wide font-medium">ElevenLabs Voice ID</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={voiceId}
+                  onChange={e => setVoiceId(e.target.value)}
+                  placeholder="Voice ID from elevenlabs.io"
+                  className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-lime-400"
+                />
+              </div>
+              <p className="text-slate-500 text-xs">
+                Find voice IDs at{' '}
+                <a href="https://elevenlabs.io/voice-library" target="_blank" rel="noopener noreferrer" className="text-lime-400 hover:underline">
+                  elevenlabs.io/voice-library
+                </a>
+                . Default is Rachel (21m00Tcm4TlvDq8ikWAM).
+              </p>
+            </div>
+          )}
+
+          {/* Generate button */}
+          <button
+            onClick={handleGenerateVideo}
+            disabled={generating || loadingPreview || !preview || preview.products.length === 0}
+            className="w-full bg-lime-400 hover:bg-lime-300 disabled:bg-slate-600 disabled:text-slate-400 text-slate-900 font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            {generating ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Generating video… (up to 60s)
+              </>
+            ) : (
+              <>🎬 Generate &amp; Download MP4</>
+            )}
+          </button>
+
+          {preview?.products.length === 0 && (
+            <p className="text-amber-400 text-xs text-center">
+              This project has no ranked products in the top 5 yet.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ---- PINTEREST PIN CARD ---- */}
+      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-5 py-4 border-b border-slate-700 flex items-center gap-3">
+          <span className="text-2xl">📌</span>
+          <div>
+            <h3 className="font-semibold text-white">Pinterest Pin</h3>
+            <p className="text-slate-400 text-xs">PNG · 1000×1500 · Pinterest-optimized infographic</p>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <p className="text-slate-400 text-sm">
+            Creates a branded infographic showing the top-ranked picks — ready to pin directly from the download.
+          </p>
+
+          <button
+            onClick={handlePinterestPin}
+            disabled={pinGenerating || !preview}
+            className="w-full bg-red-500 hover:bg-red-400 disabled:bg-slate-600 disabled:text-slate-400 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            {pinGenerating ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Generating pin…
+              </>
+            ) : (
+              <>📌 Generate &amp; Download Pinterest Pin</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* ---- TIPS CARD ---- */}
+      <div className="bg-slate-900 rounded-xl border border-slate-700 p-5 space-y-3">
+        <h4 className="text-white font-semibold text-sm flex items-center gap-2">💡 Posting Tips</h4>
+        <ul className="space-y-2 text-slate-400 text-xs">
+          <li className="flex items-start gap-2">
+            <span className="text-lime-400 mt-0.5">▶</span>
+            <span><strong className="text-white">TikTok:</strong> Upload as-is. Add trending sounds in TikTok editor. Use hashtags: #AIRecommends #TopPicks #[Category]</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-lime-400 mt-0.5">▶</span>
+            <span><strong className="text-white">Instagram Reels:</strong> Trim to under 30s if needed. Add music in Instagram editor. Tag slopsort.com in bio link.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-lime-400 mt-0.5">▶</span>
+            <span><strong className="text-white">YouTube Shorts:</strong> Upload directly — already correct aspect ratio. Add chapters in description.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-lime-400 mt-0.5">▶</span>
+            <span><strong className="text-white">Pinterest:</strong> Use the PNG pin. Link destination: the published ranking page on slopsort.com.</span>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  );
+}
+
+</script>
+
+<!--
+  ============================================================
+  INTEGRATION CHECKLIST
+  ============================================================
+
+  server.js changes (2 lines):
+  ─────────────────────────────
+  // Near top (after other requires):
+  const { registerVideoRoutes } = require('./video_routes');
+
+  // After all other routes, before app.listen():
+  registerVideoRoutes(app, pool, isAdminAuth, getSiteSettings);
+
+
+  replit.nix changes (add ffmpeg to deps):
+  ─────────────────────────────────────────
+  { pkgs }: {
+    deps = [
+      pkgs.nodejs-18_x
+      pkgs.ffmpeg          // <-- add this
+      pkgs.python3         // <-- add this if not already present
+    ];
+  }
+
+
+  Install Python dependency (run once in Replit Shell):
+  ──────────────────────────────────────────────────────
+  pip install Pillow
+
+
+  Add Replit Secret:
+  ───────────────────
+  Key:   ELEVENLABS_API_KEY
+  Value: your-elevenlabs-api-key-here
+
+
+  public/index.html tab button (add to tab bar):
+  ───────────────────────────────────────────────
+  <button
+    onClick={() => setActiveTab('social')}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'social' ? 'bg-lime-400 text-slate-900' : 'text-slate-300 hover:text-white'}`}
+  >
+    📱 Social Media
+  </button>
+
+
+  public/index.html tab content (add near other tab renders):
+  ────────────────────────────────────────────────────────────
+  {activeTab === 'social' && (
+    <SocialMediaTab projectId={selectedProject?.id} />
+  )}
+
+
+  Remove old Pinterest button:
+  ─────────────────────────────
+  Search for `/api/admin/projects/${...}/pinterest-pin` in index.html
+  and remove the old Pinterest download button — it now lives in SocialMediaTab.
+
+  ============================================================
+-->

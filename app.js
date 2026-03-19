@@ -5,12 +5,14 @@ const clearButton = document.querySelector("#clear-lists");
 const calculateButton = document.querySelector("#calculate");
 const resultsContainer = document.querySelector("#results");
 const previewContainer = document.querySelector("#preview");
+const createReelButton = document.querySelector("#create-reel");
 
 const MAX_LISTS = 20;
 const MAX_RANK = 20;
 
 const state = {
   lists: [],
+  lastRanked: [],
 };
 
 const starterLists = [
@@ -132,6 +134,12 @@ const calculateResults = () => {
 
   resultsContainer.innerHTML = "";
   previewContainer.innerHTML = "";
+  state.lastRanked = ranked;
+
+  // Show/hide Create Reel button
+  if (createReelButton) {
+    createReelButton.style.display = ranked.length > 0 ? "" : "none";
+  }
 
   if (!ranked.length) {
     resultsContainer.innerHTML =
@@ -175,6 +183,15 @@ const seedStarterLists = () => {
   const values = starterLists.map((list) => list.join("\n"));
   ensureListCount(values.length, values);
 };
+
+// Create Reel button
+if (createReelButton) {
+  createReelButton.addEventListener("click", () => {
+    if (!state.lastRanked.length) return;
+    const title = "Top " + state.lastRanked.length + " Consensus Picks";
+    ReelEditor.open(title, state.lastRanked, state.lists.length);
+  });
+}
 
 seedStarterLists();
 calculateResults();

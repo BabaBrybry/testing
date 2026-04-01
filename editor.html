@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reel Creator</title>
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+
+<div id="reel-editor" class="editor">
+
+  <!-- TOP TOOLBAR -->
+  <header class="editor-toolbar">
+    <div class="toolbar-left">
+      <input type="text" id="project-name" placeholder="Untitled Reel" value="Untitled Reel">
+    </div>
+    <div class="toolbar-center">
+      <button id="btn-add-text" class="icon-btn" title="Add Text Layer">T</button>
+      <button id="btn-add-image" class="icon-btn" title="Add Image Layer">&#x1F5BC;</button>
+      <span style="width:1px;height:24px;background:var(--border);margin:0 4px"></span>
+      <button id="btn-undo" title="Undo (Ctrl+Z)">Undo</button>
+      <button id="btn-redo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+    </div>
+    <div class="toolbar-right">
+      <button id="btn-preview">Preview</button>
+      <button id="btn-export" class="primary">Export</button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="editor-workspace">
+
+    <!-- LEFT: Layers -->
+    <aside class="editor-layers">
+      <h3>Layers</h3>
+      <div id="layer-list"></div>
+      <div class="layer-actions">
+        <button id="btn-layer-up" title="Move Up">Up</button>
+        <button id="btn-layer-down" title="Move Down">Down</button>
+        <button id="btn-layer-delete" class="danger" title="Delete Layer">Del</button>
+      </div>
+    </aside>
+
+    <!-- CENTER: Canvas -->
+    <div class="editor-canvas-wrap">
+      <div class="editor-canvas-container">
+        <canvas id="editor-canvas" width="1080" height="1920"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT: Properties -->
+    <aside class="editor-properties">
+      <h3 id="props-title">Properties</h3>
+      <div id="props-content">
+        <div class="no-selection">Select a layer to edit its properties</div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- BOTTOM: Timeline -->
+  <footer class="editor-timeline-wrap">
+    <div class="timeline-controls">
+      <button id="btn-play">Play</button>
+      <span id="timeline-time">0:00 / 0:00</span>
+    </div>
+    <div id="timeline-strip" class="timeline-strip"></div>
+    <div class="timeline-card-actions">
+      <button id="btn-add-card">+ Card</button>
+      <button id="btn-dup-card">Duplicate</button>
+      <button id="btn-del-card" class="danger">Delete Card</button>
+      <div class="card-duration">
+        <label>Duration</label>
+        <input type="range" id="card-duration" min="0.5" max="30" step="0.5" value="3">
+        <span id="card-duration-val">3.0s</span>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="file-image" accept="image/*" style="display:none">
+<input type="file" id="file-audio" accept="audio/*" style="display:none">
+
+<script type="module" src="editor/main.js"></script>
+
+</body>
+</html>

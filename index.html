@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AIQuickPick</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">AIQuickPick</p>
+        <h1>Preview consensus picks from up to 20 AI top-20 lists</h1>
+        <p class="subtitle">
+          Paste each AI's ranked list, then calculate a weighted leaderboard. Rank 1 earns 20 points, rank 20 earns 1.
+          Sample lists are prefilled so you can see the ranking instantly.
+        </p>
+      </header>
+
+      <section class="panel preview">
+        <div class="panel-header">
+          <h2>Consensus preview</h2>
+          <p class="muted">A quick snapshot of the current top picks.</p>
+        </div>
+        <div class="preview-grid" id="preview"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>AI lists</h2>
+          <div class="panel-actions">
+            <button id="add-list" class="ghost">+ Add another AI list</button>
+            <button id="clear-lists" class="ghost">Clear all</button>
+          </div>
+        </div>
+
+        <div id="lists" class="lists"></div>
+
+        <div class="panel-footer">
+          <button id="calculate" class="primary">Calculate top 10</button>
+          <div class="hint">
+            Tip: Separate entries with new lines or commas. Numbered lists are OK.
+          </div>
+        </div>
+      </section>
+
+      <section class="panel results">
+        <div class="panel-header">
+          <h2>Top 10 results</h2>
+          <p class="muted">Weighted totals across all AI lists.</p>
+        </div>
+        <div id="results" class="results-grid" aria-live="polite"></div>
+        <div class="panel-footer">
+          <button id="create-reel" class="primary reel-cta" style="display:none;">Create Reel</button>
+        </div>
+      </section>
+
+      <!-- Reel Editor -->
+      <section id="reel-editor" class="reel-editor" style="display:none;">
+        <div class="reel-toolbar">
+          <div class="reel-toolbar-left">
+            <input type="text" id="reel-title" class="reel-title-input" placeholder="Reel title..." />
+          </div>
+          <div class="reel-toolbar-right">
+            <button id="reel-global-settings-btn" class="ghost">Global Styles</button>
+            <button id="reel-export" class="primary">Export MP4</button>
+          </div>
+        </div>
+
+        <div class="reel-workspace">
+          <div class="reel-preview-wrap">
+            <div id="reel-preview" class="reel-preview">
+              <div id="reel-frame-render" class="reel-frame-render"></div>
+            </div>
+          </div>
+
+          <div id="reel-properties" class="reel-properties">
+            <div class="reel-props-header">
+              <h3 id="reel-props-title">Frame properties</h3>
+            </div>
+            <div id="reel-props-content" class="reel-props-body"></div>
+          </div>
+        </div>
+
+        <div class="reel-timeline-wrap">
+          <div id="reel-timeline" class="reel-timeline"></div>
+          <div class="reel-timeline-actions">
+            <button id="reel-add-frame" class="ghost">+ Add frame</button>
+            <button id="reel-dup-frame" class="ghost">Duplicate</button>
+            <button id="reel-del-frame" class="ghost">Delete</button>
+          </div>
+        </div>
+
+        <!-- Global Settings Modal -->
+        <div id="reel-global-modal" class="reel-modal" style="display:none;">
+          <div class="reel-modal-content">
+            <div class="reel-modal-header">
+              <h3>Global Styles</h3>
+              <button id="reel-global-close" class="remove">&times;</button>
+            </div>
+            <div id="reel-global-body" class="reel-modal-body"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <template id="list-template">
+      <article class="list-card">
+        <header>
+          <h3>AI list <span class="list-number"></span></h3>
+          <button class="remove" type="button">Remove</button>
+        </header>
+        <textarea rows="10" placeholder="1. Product name\n2. Another product\n... up to 20"></textarea>
+      </article>
+    </template>
+
+    <script src="reel-editor.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
